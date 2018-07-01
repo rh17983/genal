@@ -5,83 +5,86 @@ import random
 import operator
 import time
 import matplotlib.pyplot as plt
+import math
 
 temps1 = time.time()
 
-#genetic algorithm function
-def fitness (password, test_word):
-	score = 0
-	i = 0
-	while (i < len(password)):
-		if (password[i] == test_word[i]):
-			score+=1
-		i+=1
-	return score * 100 / len(password)
+# ------------------------------------------   First population initialization --------------------
 
-def generateAWord (length):
-	i = 0
-	result = ""
-	while i < length:
-		letter = chr(97 + int(26 * random.random()))
-		result += letter
-		i +=1
-	return result
+def generateFirstPopulation(sizePopulation):
+    population = []
 
-def generateFirstPopulation(sizePopulation, password):
-	population = []
-	i = 0
-	while i < sizePopulation:
-		population.append(generateAWord(len(password)))
-		i+=1
-	return population
+    score = 0.0
+    i = 0
+    
+    while i < sizePopulation:
+        x = random.random() * 100
+        y = random.random() * 100
+        z = random.random() * 100
+        population.append({'score': score, 'genome': [x,y,z]})
+        i+=1
 
-def computePerfPopulation(population, password):
-    populationPerf = {}
+    return population
+
+
+# ------------------------------------------   Scoring & Breeders selection --------------------
+
+def get_score (x,y,z):
+
+    #2xz exp(-x) - 2y^3 + y^2 - 3z^3
+    score = 2 * x * z * math.exp(-x) - 2 * math.pow(y, 3) + math.pow(y, 2) - 3 * math.pow(z, 3)
+
+    return score
+
+
+def score_and_sort(population):
+
+    population_scored = []
 
     for individual in population:
-        populationPerf[individual] = fitness(password, individual)
+        gemome = individual["genome"]
+        score = get_score(gemome[0], gemome[1], gemome[2])
+        population_scored.append({'score': score, 'genome': gemome})
 
-    populationPerf1 = sorted(populationPerf.items(), key = operator.itemgetter(1), reverse=True)
-    
-    #print("\n\n")
-    #print(populationPerf1)
-    #quit()
-    
-    return populationPerf1
+    return population_scored
 
-def selectFromPopulation(populationSorted, best_sample, lucky_few):
+
+def selectBreeders(population, best_sample, lucky_few):
 	
-    nextGeneration = []
+    breeders = []
 
     for i in range(best_sample):
-
-        #print("\n\n")
-        #print(populationSorted[i][0])
-        #quit()
-        
-        nextGeneration.append(populationSorted[i][0])
+        breeders.append(population[i])
 
     for i in range(lucky_few):
-        nextGeneration.append(random.choice(populationSorted)[0])
+        breeders.append(random.choice(population))
     
-    #print("\n\n")
-    #print(nextGeneration)
-    #quit()
+    #random.shuffle(breeders)
     
-    random.shuffle(nextGeneration)
-    
-    return nextGeneration
+    return breeders
 
+# ------------------------------------------   Mating --------------------
 
 def createChild(individual1, individual2):
 
-    child = ""
+    child_genome = [0.0, 0.0, 0.0]
+    child = []
 
-    for i in range(len(individual1)):
-        if (int(100 * random.random()) < 50):
-            child += individual1[i]
-        else:
-            child += individual2[i]
+    d = 0.25
+
+    parent1_gemome = individual1[1][1]
+    parent2_gemome = individual2[1][1]
+
+    for i in range(3):
+        alfa = random.uniform(-d, 1 + d)
+        child_genome[i] = parent1_gemome[i] * alfa + parent2_gemome[i] * (1 - alfa)
+
+    
+    child.append([0.0, child_genome])
+    
+    #print("\n Child: ")
+    #print(child)
+    #quit()
 
     return child
 
@@ -100,6 +103,7 @@ def createChildren(breeders, number_of_child):
 
     return nextPopulation
 
+# ------------------------------------------   Mutation --------------------
 
 def mutateWord(word):
 
@@ -126,25 +130,39 @@ def mutatePopulation(population, chance_of_mutation):
 
 
 
-def nextGeneration (firstGeneration, password, best_sample, lucky_few, number_of_child, chance_of_mutation):
+def nextGeneration (firstGeneration, best_sample, lucky_few, number_of_child, chance_of_mutation):
     
-    populationSorted = computePerfPopulation(firstGeneration, password) # desc sorted (by value) assoc array (gene => fitnes value)
-    nextBreeders = selectFromPopulation(populationSorted, best_sample, lucky_few) # array of breeders [gene, .., gene]
-    nextPopulation = createChildren(nextBreeders, number_of_child) # mating. shuffle crossover. array of genes of new population [gene, .., gene]
-    nextGeneration = mutatePopulation(nextPopulation, chance_of_mutation) # mutation. array of genes of mutated population [gene, .., gene]
+    print("\n firstGeneration \n")
+    print(firstGeneration)
+    
+    populationSorted = score_and_sort(firstGeneration) # desc sorted (by value) assoc array (gene => fitnes value)
 
-    #print("\n\n")
-    #print(nextGeneration)
+    print("\n populationSorted \n")
+    print(populationSorted)
     #quit()
+
+    nextBreeders = selectBreeders(populationSorted, best_sample, lucky_few) # array of breeders [gene, .., gene]
+    
+    print("\n nextBreeders \n")
+    print(nextBreeders)
+    quit()
+
+    nextPopulation = createChildren(nextBreeders, number_of_child) # mating. shuffle crossover. array of genes of new population [gene, .., gene]
+    
+    print("\n nextPopulation \n")
+    print(nextPopulation)
+    #quit()
+
+    #nextGeneration = mutatePopulation(nextPopulation, chance_of_mutation) # mutation. array of genes of mutated population [gene, .., gene]
 
     return nextGeneration
 
 
-def multipleGeneration(number_of_generation, password, size_population, best_sample, lucky_few, number_of_child, chance_of_mutation):
+def multipleGeneration(number_of_generation, size_population, best_sample, lucky_few, number_of_child, chance_of_mutation):
 	historic = []
-	historic.append(generateFirstPopulation(size_population, password))
+	historic.append(generateFirstPopulation(size_population))
 	for i in range (number_of_generation):
-		historic.append(nextGeneration(historic[i], password, best_sample, lucky_few, number_of_child, chance_of_mutation))
+		historic.append(nextGeneration(historic[i], best_sample, lucky_few, number_of_child, chance_of_mutation))
 	return historic
 
 
@@ -157,7 +175,7 @@ def printSimpleResult(historic, password, number_of_generation): #bestSolution i
 
 #analysis tools
 def getBestIndividualFromPopulation (population, password):
-	return computePerfPopulation(population, password)[0]
+	return score_and_sort(population)[0]
 
 def getListBestIndividualFromHistorique (historic, password):
 	bestIndividuals = []
@@ -184,7 +202,7 @@ def evolutionAverageFitness(historic, password, size_population):
 	
 	evolutionFitness = []
 	for population in historic:
-		populationPerf = computePerfPopulation(population, password)
+		populationPerf = score_and_sort(population)
 		averageFitness = 0
 		for individual in populationPerf:
 			averageFitness += individual[1]
@@ -197,14 +215,9 @@ def evolutionAverageFitness(historic, password, size_population):
 
 
 
-#variables
-password = "banana"
-
 size_population = 100
-
 best_sample = 20
 lucky_few = 20
-
 number_of_child = 5
 number_of_generation = 50
 chance_of_mutation = 5
@@ -213,11 +226,10 @@ chance_of_mutation = 5
 if ((best_sample + lucky_few) / 2 * number_of_child != size_population):
 	print ("population size not stable")
 else:
-	historic = multipleGeneration(number_of_generation, password, size_population, best_sample, lucky_few, number_of_child, chance_of_mutation)
+	historic = multipleGeneration(number_of_generation, size_population, best_sample, lucky_few, number_of_child, chance_of_mutation)
 	
-	printSimpleResult(historic, password, number_of_generation)
-	
-	evolutionBestFitness(historic, password)
-	evolutionAverageFitness(historic, password, size_population)
+	#printSimpleResult(historic, password, number_of_generation)
+	#evolutionBestFitness(historic, password)
+	#evolutionAverageFitness(historic, password, size_population)
 
 print(time.time() - temps1)
