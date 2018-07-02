@@ -4,52 +4,6 @@ import time
 import matplotlib.pyplot as plt
 import math
 
-#print result:
-def printSimpleResult(historic, password, number_of_generation): #bestSolution in historic. Caution not the last
-	result = getListBestIndividualFromHistorique(historic, password)[number_of_generation-1]
-	print ("solution: \"" + result[0] + "\" de fitness: " + str(result[1]))
-
-#analysis tools
-def getBestIndividualFromPopulation (population):
-	return scorePopulation(population)[0]
-
-def getListBestIndividualFromHistorique (historic, password):
-	bestIndividuals = []
-	for population in historic:
-		bestIndividuals.append(getBestIndividualFromPopulation(population))
-	return bestIndividuals
-
-#graph
-def evolutionBestFitness(historic):
-	plt.axis([0,len(historic),0,105])
-	plt.title("Best Fitness")
-	
-	evolutionFitness = []
-	for population in historic:
-		evolutionFitness.append(getBestIndividualFromPopulation(population)[1])
-	plt.plot(evolutionFitness)
-	plt.ylabel('fitness best individual')
-	plt.xlabel('generation')
-	plt.show()
-
-def evolutionAverageFitness(historic, password, size_population):
-	plt.axis([0,len(historic),0,105])
-	plt.title(password)
-	
-	evolutionFitness = []
-	for population in historic:
-		populationPerf = scorePopulation(population)
-		averageFitness = 0
-		for individual in populationPerf:
-			averageFitness += individual[1]
-		evolutionFitness.append(averageFitness/size_population)
-	plt.plot(evolutionFitness)
-	plt.ylabel('Average fitness')
-	plt.xlabel('generation')
-	plt.show()
-
-
-
 
 # First population initialization
 def generateFirstPopulation(sizePopulation):
@@ -87,7 +41,6 @@ def scorePopulation(population):
 
     population_scores = {}
     population_gemomes = {}
-
     
     i = 0
     for individual in population:
@@ -102,10 +55,6 @@ def scorePopulation(population):
 
         i += 1
 
-    print ("\n population_best_score: ")
-    print (population_best_score)
-    print ("\n")
-
     population_scores_sorted = sorted(population_scores.items(), key = operator.itemgetter(1), reverse=True)
 
     for uu in population_scores_sorted:
@@ -116,7 +65,8 @@ def scorePopulation(population):
         gemome = population_gemomes[key]
         population_scored.append({'score': score, 'genome': gemome})
     
-    return population_scored
+    return population_scored, population_best_score, population_scored[0]
+
 
 # select individuals for breeding
 def selectBreeders(population, best_sample, lucky_few):
@@ -186,7 +136,7 @@ def createBroodPopulation(breeders, number_of_child):
 # mutate the individuum. Real Valued Mutation. Ref - http://www.geatbx.com/docu/algindex-04.html
 def mutate(individual):
 
-    mutation_range = 0.1
+    mutation_range = 0.50 # less this parameter value is, more probabbility to stuck to the local maximum (0.037) (99% wheb the value is 0.1).  
     mutation_precision = 8 # minimal step-size possible
     variables_domain = 100
 
@@ -220,16 +170,30 @@ def mutatePopulation(population, chance_of_mutation):
 
     return population
 
+# ------------------------ Visualisation -----------------------------
 
-# main
+# plot the best scores within the generations
+def best_scores_plt(best_scores):
+	plt.axis([0,len(best_scores),0, 2*best_individuum["score"]])
+	plt.title("Best Fitness")
 
+	plt.plot(best_scores)
+	plt.ylabel('fitness best individual')
+	plt.xlabel('generation')
+	plt.show()
+
+
+# ----------------------- main
+
+# global parameters
 size_population = 100
 best_sample = 20 # count of individuals with top best fitness score to be selected for breeding
 lucky_few = 20 # count of individuals with random fitness score to be selected for breeding
 number_of_child = 5 # number of chiled for each couple
-iterations_count = 10000 # limit of generations
+iterations_count = 100 # limit of generations
 chance_of_mutation = 5 # probability of mutation for the individual
 
+# main
 if ((best_sample + lucky_few) / 2 * number_of_child != size_population):
 	print ("The size of population is not stable")
 else:
@@ -241,10 +205,14 @@ else:
     populations = []
     populations.append(theGeneration)
 
+    best_scores = []
+
     for i in range (iterations_count):
 
         # calculate the function value for each individual
-        populationScored = scorePopulation(theGeneration)
+        populationScored, best_score, best_individuum = scorePopulation(theGeneration)
+
+        best_scores.append(best_score)
 
         #print("\n populationScored \n")
         #print(populationScored)
@@ -272,3 +240,16 @@ else:
         #quit()
 
         populations.append(theGeneration)
+
+
+    #for i in range (iterations_count):
+       #print(best_scores[i])
+
+    best_scores_plt(best_scores)
+
+    print ("\nFinal:")
+    print ("\nMaximum: " + str(best_individuum["score"]))
+    print ("Variables: ")
+    print(best_individuum["genome"][0])
+    print(best_individuum["genome"][1])
+    print(best_individuum["genome"][2])
