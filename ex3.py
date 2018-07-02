@@ -105,7 +105,15 @@ def createChild(parent1, parent2):
 
     for i in range(3):
         alfa = random.uniform(-d, 1 + d)
-        child_genome[i] = parent1_gemome[i] * alfa + parent2_gemome[i] * (1 - alfa)
+        new_value = parent1_gemome[i] * alfa + parent2_gemome[i] * (1 - alfa)
+
+        if new_value > 100:
+            new_value = 100
+
+        if new_value < 0:
+            new_value = 0
+
+        child_genome[i] = new_value
 
     child = {'score': 0.0, 'genome': child_genome}
     
@@ -135,19 +143,29 @@ def createBroodPopulation(breeders, number_of_child):
 def mutate(individual):
 
     mutation_range = 0.1
-    mutation_precision = 5 # minimal step-size possible
+    mutation_precision = 8 # minimal step-size possible
     variables_domain = 100
 
     mutation_rate = 1/3
     
     for i in range(3):
-        if random.random() * 100 < mutation_rate:
+        if random.random() < mutation_rate:
 
             sign = random.choice([-1, 1])
             u = random.random()
             step = sign * (mutation_range * variables_domain) * math.pow(2, -u * mutation_precision)
 
-            individual["genome"][i] = individual["genome"][i] + step
+            new_value = individual["genome"][i] + step
+
+            if new_value > 100:
+                new_value = 100
+
+            if new_value < 0:
+                new_value = 0
+
+            #print (step)
+
+            individual["genome"][i] = new_value
 
     return individual
 
@@ -187,8 +205,12 @@ def nextGeneration (firstGeneration, best_sample, lucky_few, number_of_child, ch
     #quit()
 
     nextGeneration = mutatePopulation(broodPopulation, chance_of_mutation) # mutation. array of genes of mutated population [gene, .., gene]
+    
+    #print("\n nextGeneration \n")
+    #print(nextGeneration)
+    #quit()
 
-    return broodPopulation
+    return nextGeneration
 
 
 def multipleGeneration(number_of_generation, size_population, best_sample, lucky_few, number_of_child, chance_of_mutation):
