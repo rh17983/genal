@@ -1,6 +1,3 @@
-#!/usr/bin/python3.5
-# -*-coding:Utf-8 -*
-
 import random
 import operator
 import time
@@ -54,8 +51,7 @@ def evolutionAverageFitness(historic, password, size_population):
 
 
 
-# ------------------------------------------   First population initialization --------------------
-
+# First population initialization
 def generateFirstPopulation(sizePopulation):
     population = []
 
@@ -72,8 +68,9 @@ def generateFirstPopulation(sizePopulation):
     return population
 
 
-# ------------------------------------------   Scoring & Breeders selection --------------------
+# ----------------------- Scoring & Breeders selection --------------------
 
+# get individual score - value of function for the individual
 def get_score (x,y,z):
 
     #2xz exp(-x) - 2y^3 + y^2 - 3z^3
@@ -81,7 +78,7 @@ def get_score (x,y,z):
 
     return score
 
-
+# set individual score for each individual in current population
 def scorePopulation(population):
 
     individual_score = 0.0
@@ -90,7 +87,7 @@ def scorePopulation(population):
 
     population_scores = {}
     population_gemomes = {}
-    
+
     
     i = 0
     for individual in population:
@@ -121,7 +118,7 @@ def scorePopulation(population):
     
     return population_scored
 
-
+# select individuals for breeding
 def selectBreeders(population, best_sample, lucky_few):
 	
     breeders = []
@@ -136,7 +133,7 @@ def selectBreeders(population, best_sample, lucky_few):
     
     return breeders
 
-# ------------------------------------------   Mating --------------------
+# ------------------------------------------ Breeding --------------------
 
 # Intermediate recombination. Ref - http://www.geatbx.com/docu/algindex-03.html
 def createChild(parent1, parent2):
@@ -169,7 +166,7 @@ def createChild(parent1, parent2):
 
     return child
 
-
+# create new population
 def createBroodPopulation(breeders, number_of_child):
     
     broodPopulation = []
@@ -186,7 +183,7 @@ def createBroodPopulation(breeders, number_of_child):
 
 # ------------------------------------------   Mutation --------------------
 
-# Real Valued Mutation. Ref - http://www.geatbx.com/docu/algindex-04.html
+# mutate the individuum. Real Valued Mutation. Ref - http://www.geatbx.com/docu/algindex-04.html
 def mutate(individual):
 
     mutation_range = 0.1
@@ -214,7 +211,7 @@ def mutate(individual):
 
     return individual
 
-	
+# mutate individuals in the popluation
 def mutatePopulation(population, chance_of_mutation):
 
     for i in range(len(population)):
@@ -224,14 +221,13 @@ def mutatePopulation(population, chance_of_mutation):
     return population
 
 
-# ------------------------------------------------------------------------------------------------------
-
+# main
 
 size_population = 100
 best_sample = 20 # count of individuals with top best fitness score to be selected for breeding
 lucky_few = 20 # count of individuals with random fitness score to be selected for breeding
 number_of_child = 5 # number of chiled for each couple
-iterations_count = 100 # limit of generations
+iterations_count = 10000 # limit of generations
 chance_of_mutation = 5 # probability of mutation for the individual
 
 if ((best_sample + lucky_few) / 2 * number_of_child != size_population):
