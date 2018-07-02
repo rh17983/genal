@@ -7,7 +7,52 @@ import time
 import matplotlib.pyplot as plt
 import math
 
-temps1 = time.time()
+#print result:
+def printSimpleResult(historic, password, number_of_generation): #bestSolution in historic. Caution not the last
+	result = getListBestIndividualFromHistorique(historic, password)[number_of_generation-1]
+	print ("solution: \"" + result[0] + "\" de fitness: " + str(result[1]))
+
+#analysis tools
+def getBestIndividualFromPopulation (population):
+	return scorePopulation(population)[0]
+
+def getListBestIndividualFromHistorique (historic, password):
+	bestIndividuals = []
+	for population in historic:
+		bestIndividuals.append(getBestIndividualFromPopulation(population))
+	return bestIndividuals
+
+#graph
+def evolutionBestFitness(historic):
+	plt.axis([0,len(historic),0,105])
+	plt.title("Best Fitness")
+	
+	evolutionFitness = []
+	for population in historic:
+		evolutionFitness.append(getBestIndividualFromPopulation(population)[1])
+	plt.plot(evolutionFitness)
+	plt.ylabel('fitness best individual')
+	plt.xlabel('generation')
+	plt.show()
+
+def evolutionAverageFitness(historic, password, size_population):
+	plt.axis([0,len(historic),0,105])
+	plt.title(password)
+	
+	evolutionFitness = []
+	for population in historic:
+		populationPerf = scorePopulation(population)
+		averageFitness = 0
+		for individual in populationPerf:
+			averageFitness += individual[1]
+		evolutionFitness.append(averageFitness/size_population)
+	plt.plot(evolutionFitness)
+	plt.ylabel('Average fitness')
+	plt.xlabel('generation')
+	plt.show()
+
+
+
 
 # ------------------------------------------   First population initialization --------------------
 
@@ -93,18 +138,19 @@ def selectBreeders(population, best_sample, lucky_few):
 
 # ------------------------------------------   Mating --------------------
 
+# Intermediate recombination. Ref - http://www.geatbx.com/docu/algindex-03.html
 def createChild(parent1, parent2):
 
     child_genome = [0.0, 0.0, 0.0]
     child = {}
 
-    d = 0.25
+    d = 0.25 # d defines the size of the area for possible offspring
 
     parent1_gemome = parent1["genome"]
     parent2_gemome = parent2["genome"]
 
     for i in range(3):
-        alfa = random.uniform(-d, 1 + d)
+        alfa = random.uniform(-d, 1 + d) # scaling factor.
         new_value = parent1_gemome[i] * alfa + parent2_gemome[i] * (1 - alfa)
 
         if new_value > 100:
@@ -140,6 +186,7 @@ def createBroodPopulation(breeders, number_of_child):
 
 # ------------------------------------------   Mutation --------------------
 
+# Real Valued Mutation. Ref - http://www.geatbx.com/docu/algindex-04.html
 def mutate(individual):
 
     mutation_range = 0.1
@@ -163,8 +210,6 @@ def mutate(individual):
             if new_value < 0:
                 new_value = 0
 
-            #print (step)
-
             individual["genome"][i] = new_value
 
     return individual
@@ -181,109 +226,53 @@ def mutatePopulation(population, chance_of_mutation):
 
 # ------------------------------------------------------------------------------------------------------
 
-def nextGeneration (firstGeneration, best_sample, lucky_few, number_of_child, chance_of_mutation):
-    
-    #print("\n firstGeneration \n")
-    #print(firstGeneration)
-    
-    populationScored = scorePopulation(firstGeneration) # desc sorted (by value) assoc array (gene => fitnes value)
-
-    #print("\n populationScored \n")
-    #print(populationScored)
-    #quit()
-
-    breeders = selectBreeders(populationScored, best_sample, lucky_few) # array of breeders [gene, .., gene]
-    
-    #print("\n breeders \n")
-    #print(breeders)
-    #quit()
-
-    broodPopulation = createBroodPopulation(breeders, number_of_child) # mating. shuffle crossover. array of genes of new population [gene, .., gene]
-    
-    #print("\n broodPopulation \n")
-    #print(broodPopulation)
-    #quit()
-
-    nextGeneration = mutatePopulation(broodPopulation, chance_of_mutation) # mutation. array of genes of mutated population [gene, .., gene]
-    
-    #print("\n nextGeneration \n")
-    #print(nextGeneration)
-    #quit()
-
-    return nextGeneration
-
-
-def multipleGeneration(number_of_generation, size_population, best_sample, lucky_few, number_of_child, chance_of_mutation):
-	
-    historic = []
-    historic.append(generateFirstPopulation(size_population))
-	
-    for i in range (number_of_generation):
-        historic.append(nextGeneration(historic[i], best_sample, lucky_few, number_of_child, chance_of_mutation))
-
-    return historic
-
-
-
-
-#print result:
-def printSimpleResult(historic, password, number_of_generation): #bestSolution in historic. Caution not the last
-	result = getListBestIndividualFromHistorique(historic, password)[number_of_generation-1]
-	print ("solution: \"" + result[0] + "\" de fitness: " + str(result[1]))
-
-#analysis tools
-def getBestIndividualFromPopulation (population):
-	return scorePopulation(population)[0]
-
-def getListBestIndividualFromHistorique (historic, password):
-	bestIndividuals = []
-	for population in historic:
-		bestIndividuals.append(getBestIndividualFromPopulation(population))
-	return bestIndividuals
-
-#graph
-def evolutionBestFitness(historic):
-	plt.axis([0,len(historic),0,105])
-	plt.title("Best Fitness")
-	
-	evolutionFitness = []
-	for population in historic:
-		evolutionFitness.append(getBestIndividualFromPopulation(population)[1])
-	plt.plot(evolutionFitness)
-	plt.ylabel('fitness best individual')
-	plt.xlabel('generation')
-	plt.show()
-
-def evolutionAverageFitness(historic, password, size_population):
-	plt.axis([0,len(historic),0,105])
-	plt.title(password)
-	
-	evolutionFitness = []
-	for population in historic:
-		populationPerf = scorePopulation(population)
-		averageFitness = 0
-		for individual in populationPerf:
-			averageFitness += individual[1]
-		evolutionFitness.append(averageFitness/size_population)
-	plt.plot(evolutionFitness)
-	plt.ylabel('Average fitness')
-	plt.xlabel('generation')
-	plt.show()
-
-
-
 
 size_population = 100
-best_sample = 20
-lucky_few = 20
-number_of_child = 5
-number_of_generation = 100
-chance_of_mutation = 5
+best_sample = 20 # count of individuals with top best fitness score to be selected for breeding
+lucky_few = 20 # count of individuals with random fitness score to be selected for breeding
+number_of_child = 5 # number of chiled for each couple
+iterations_count = 100 # limit of generations
+chance_of_mutation = 5 # probability of mutation for the individual
 
-#program
 if ((best_sample + lucky_few) / 2 * number_of_child != size_population):
-	print ("population size not stable")
+	print ("The size of population is not stable")
 else:
-	historic = multipleGeneration(number_of_generation, size_population, best_sample, lucky_few, number_of_child, chance_of_mutation)
 
-print(time.time() - temps1)
+    # initial population
+    theGeneration = generateFirstPopulation(size_population)
+
+    # array with populations from all iterations
+    populations = []
+    populations.append(theGeneration)
+
+    for i in range (iterations_count):
+
+        # calculate the function value for each individual
+        populationScored = scorePopulation(theGeneration)
+
+        #print("\n populationScored \n")
+        #print(populationScored)
+        #quit()
+
+        # select individuals for breeding
+        breeders = selectBreeders(populationScored, best_sample, lucky_few)
+        
+        #print("\n breeders \n")
+        #print(breeders)
+        #quit()
+
+        # mate breeders and create new population by recombination
+        populationNew = createBroodPopulation(breeders, number_of_child)
+        
+        #print("\n populationNew \n")
+        #print(populationNew)
+        #quit()
+
+        # mutation
+        theGeneration = mutatePopulation(populationNew, chance_of_mutation)
+        
+        #print("\n nextGeneration \n")
+        #print(nextGeneration)
+        #quit()
+
+        populations.append(theGeneration)
