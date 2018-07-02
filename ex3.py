@@ -38,6 +38,7 @@ def scorePopulation(population):
     individual_score = 0.0
     
     population_best_score = 0.0
+    
     population_scored = []
 
     population_scores = {}
@@ -95,7 +96,7 @@ def selectBreeders(population, top_score_individuals_count, random_score_individ
 
 # ------------------------------------------ Breeding --------------------
 
-# Intermediate recombination. Ref - http://www.geatbx.com/docu/algindex-03.html
+# Intermediate recombination.
 def createChild(parent1, parent2):
 
     child_genome = [0.0, 0.0, 0.0]
@@ -135,15 +136,15 @@ def createBroodPopulation(breeders, number_of_child):
 
 # ------------------------------------------   Mutation --------------------
 
-# mutate the individuum. Real Valued Mutation. Ref - http://www.geatbx.com/docu/algindex-04.html
+# mutate the individuum. Real Valued Mutation.
 def mutate(individual):
 
-    mutation_range = 0.50 # less this parameter value is, more probabbility to stuck to the local maximum (0.037) (99% wheb the value is 0.1).  
+    mutation_rate = 1/3 # probability of mutation of the certain gene (1/n).
+
+    mutation_range = 0.50 # less this parameter value is, more probabbility to stuck to the local maximum (0.037) (99% when the value is 0.1).  
     mutation_precision = 8 # minimal step-size possible
     variables_domain = 100
 
-    mutation_rate = 1/3 # prbability of mutation of the certain gene.
-    
     for i in range(3):
         if random.random() < mutation_rate:
 
@@ -189,9 +190,12 @@ def best_scores_plt(best_scores):
 
 # global parameters
 population_size = 100
+
 top_score_individuals_count = 20 # count of individuals with top best fitness score to be selected for breeding
 random_score_individuals_count = 20 # count of individuals with random fitness score to be selected for breeding
+
 number_of_child = 5 # number of chiled for each couple
+
 iterations_count = 100 # limit of generations
 individual_mutation_prob = 5 # probability of mutation for the individual
 
@@ -202,12 +206,12 @@ else:
     # best scores of the generations
     best_scores = []
 
-    # create initial population
+    # 0. create initial population
     theGeneration = generateFirstPopulation(population_size)
 
     for i in range (iterations_count):
 
-        # calculate the score (function value) for each individual
+        # 1. calculate the score (function value) for each individual
         populationScored, best_score, best_individuum = scorePopulation(theGeneration)
 
         # add the generation best score to the array
@@ -217,25 +221,25 @@ else:
         #print(populationScored)
         #quit()
 
-        # select individuals for breeding
+        # 2. select individuals for breeding
         breeders = selectBreeders(populationScored, top_score_individuals_count, random_score_individuals_count)
         
         #print("\n breeders \n")
         #print(breeders)
         #quit()
 
-        # mate breeders and create new population by recombination
+        # 3. mate breeders and create new population by recombination
         populationNew = createBroodPopulation(breeders, number_of_child)
         
         #print("\n populationNew \n")
         #print(populationNew)
         #quit()
 
-        # mutation
+        # 4. mutation
         theGeneration = mutatePopulation(populationNew, individual_mutation_prob)
 
-        #print("\n nextGeneration \n")
-        #print(nextGeneration)
+        #print("\n theGeneration \n")
+        #print(theGeneration)
         #quit()
 
 
