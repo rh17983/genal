@@ -5,9 +5,11 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 
+# calculate fitness score
 def calculate_fitness(x,y,z):
     return 2 * x * z * math.exp(-x) - 2 * math.pow(y, 3) + math.pow(y, 2) - 3 * math.pow(z, 3)
 
+# create initial population
 def initial_population(population_size):
     population = []
 
@@ -20,62 +22,52 @@ def initial_population(population_size):
     return population
 
 
-# 
+# set fitness score for each individ
 def evaluate(population):
     for i in range(len(population)):  
         the_genome = population[i]["gene"]
         fitness = calculate_fitness(the_genome[0], the_genome[1], the_genome[2])
         population[i]["fit"] = fitness
 
+    # sort just for get the individ with best score
     newlist = sorted(population, key=operator.itemgetter('fit'), reverse=True)
 
     return newlist, newlist[0]
 
-# ------------------------------------------ Breeding --------------------
 
-# Intermediate recombination.
-def createChild(parent1, parent2):
+### New poulation
 
-    child_genome = [0.0, 0.0, 0.0]
-    child = {}
+# Create a new individ from 2 individs (meyosis)
+def newIndivid(parent1, parent2):
 
-    d = 0.25 # d defines the size of the area for possible offspring
+    new_genome = [0.0, 0.0, 0.0]
+    new_individ = {}
 
     parent1_gemome = parent1["gene"]
     parent2_gemome = parent2["gene"]
 
     for i in range(3):
-        alfa = random.uniform(-d, 1 + d) # scaling factor.
-        new_value = parent1_gemome[i] * alfa + parent2_gemome[i] * (1 - alfa)
+        scaling = random.uniform(-0.25, 1.25)
+        new_gene = parent1_gemome[i] * scaling + parent2_gemome[i] * (1 - scaling)
 
-        if new_value > 100:
-            new_value = 100
+        if new_gene > 100:
+            new_gene = 100
 
-        if new_value < 0:
-            new_value = 0
+        if new_gene < 0:
+            new_gene = 0
 
-        child_genome[i] = new_value
+        new_genome[i] = new_gene
 
-    child = {'fit': 0.0, 'gene': child_genome}
+    new_individ = {'fit': 0.0, 'gene': new_genome}
 
-    return child
+    return new_individ
 
-# Create new population
-def createBroodPopulation(breeders, number_of_child):
-    
-    broodPopulation = []
-    
-    for i in range(int(len(breeders)/2)):
-        for j in range(number_of_child):
-            broodPopulation.append(createChild(breeders[i], breeders[len(breeders) -1 -i]))
-
-    return broodPopulation
-
-# Selection of parents (Tournament) and Mating
+# Select parents (Tournament) and Mate
 def generate_offspring(current_population, population_size):
 
     group_size = 5
     parents = []
+    child_num = 3
     
     for i in range(40):
         parent = 0
@@ -95,13 +87,18 @@ def generate_offspring(current_population, population_size):
         parents.append(current_population[parent])
     
         
-    new_generation = createBroodPopulation(parents, 3) + parents
+    new_population = parents
 
+    for i in range(int(len(parents)/2)):
+        for j in range(child_num):
+            new_population.append(newIndivid(parents[i], parents[len(parents) -1 -i]))
 
-    return new_generation
+    return new_population
+
     
-# ------------------------------------------ Breeding --------------------
+### Genetic Operators
 
+# make recombination of genes of the individs in population
 def crossover(population):
     
     # probability of pair crossover
@@ -145,27 +142,30 @@ def crossover(population):
     return population
         
 
+# make mutations of genes of the individs in population
 def mutation(population):
+    
     mutation_probability = 0.1
     
-    mu, sigma = 0, 5 # mean and standard deviation
+    mean, sigma = 0, 5 # mean and standard deviation
     for i in range(len(population)):
         for j in range(3):
             if random.random() < mutation_probability:
-                rnd_value = np.random.normal(mu, sigma, 1)[0]
-                # rnd_value = random.uniform(-50, 50)
-                new_value = population[i]['gene'][j] + rnd_value
+                rnd_value = np.random.normal(mean, sigma, 1)[0]
+                new_gene = population[i]['gene'][j] + rnd_value
                 
-                if new_value > 100:
-                    new_value = 100
-                elif new_value < 0:
-                    new_value = 0
+                if new_gene > 100:
+                    new_gene = 100
+
+                elif new_gene < 0:
+                    new_gene = 0
                     
-                population[i]['gene'][j]= new_value
+                population[i]['gene'][j]= new_gene
+    
     return population
 
 
-# -- Plot ----------------------
+### Plot
 
 # best population scores
 def show_best_scores(bests, best_of_the_bests):
@@ -173,7 +173,7 @@ def show_best_scores(bests, best_of_the_bests):
     plt.title("Generations Bests")
     plt.xlabel('Iteration')
     plt.ylabel('Best Score of the Population')
-    plt.axis([0, len(bests), 0, 1.5 * best_of_the_bests])
+    plt.axis([0, len(bests), 0, best_of_the_bests * 1.5])
     plt.show()
 
         
@@ -181,10 +181,12 @@ def show_best_scores(bests, best_of_the_bests):
 ### MAIN
 #######################################################################################
 
+### global parameters
 population_size = 100
 time = 300
 progress = []
 
+# initial population
 population = initial_population(population_size)
 
 for i in range (time):
@@ -198,14 +200,15 @@ for i in range (time):
     # new population
     population = generate_offspring(population, population_size)
     
+    # crossover
     population = crossover(population)
 
-    # mutate population
+    # mutate
     population = mutation(population)
 
 
-for i in range(time):
-   print(progress[i])
+#for i in range(time):
+#   print(progress[i])
 
 print ("Best Fitness: " + str(winner["fit"])+'\n')
 print("Winner: ",str(winner["gene"][0]),str(winner["gene"][1]),str(winner["gene"][2]))
