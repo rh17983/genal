@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 # calculate fitness score
 def calculate_fitness(x,y,z):
     return 2 * x * z * math.exp(-x) - 2 * math.pow(y, 3) + math.pow(y, 2) - 3 * math.pow(z, 3)
+    # return 2 * x + 3 * y - 1 / (math.pow(z, 3) + 1)
 
 # create initial population
 def initial_population(population_size):
@@ -24,30 +25,41 @@ def initial_population(population_size):
 
 # set fitness score for each individ
 def evaluate(population):
-    for i in range(len(population)):  
+    
+    fitness_sum = 0
+
+    for i in range(len(population)):
+        
         the_genome = population[i]["gene"]
+        
         fitness = calculate_fitness(the_genome[0], the_genome[1], the_genome[2])
         population[i]["fit"] = fitness
+        
+        fitness_sum += fitness
 
     # sort just for get the individ with best score
     newlist = sorted(population, key=operator.itemgetter('fit'), reverse=True)
 
-    return newlist, newlist[0]
+    # get mean
+    fitness_mean = fitness_sum / len(population)
+
+    return newlist, newlist[0], fitness_mean
 
 
 ### New poulation
 
-# Create a new individ from 2 individs (meyosis)
+# Create a new individ from 2 parent individs (meyosis)
 def newIndivid(parent1, parent2):
 
+    gene_count = 3
     new_genome = [0.0, 0.0, 0.0]
     new_individ = {}
 
     parent1_gemome = parent1["gene"]
     parent2_gemome = parent2["gene"]
 
-    for i in range(3):
-        scaling = random.uniform(-0.25, 1.25)
+    for i in range(gene_count):
+        scaling = random.uniform(0, 1)
         new_gene = parent1_gemome[i] * scaling + parent2_gemome[i] * (1 - scaling)
 
         if new_gene > 100:
@@ -62,14 +74,20 @@ def newIndivid(parent1, parent2):
 
     return new_individ
 
-# Select parents (Tournament) and Mate
-def generate_offspring(current_population, population_size):
+# Select parents (Tournament) and mate the selected breeders
+# Inputs:
+#   current_population - array of the current popupation individuals
+#   population_size - population size
+#   group_size - subpart of the population for the tournament selection
+#   parents_count - number of the individuals to be selected for breeding
+#   child_num - number of children each breeders couple should have
 
-    group_size = 5
-    parents = []
-    child_num = 3
-    
-    for i in range(40):
+def generate_offspring(current_population, population_size, group_size, parents_count, child_num):
+
+    # array of the individuals selected for breeding
+    parents = [] 
+
+    for i in range(parents_count):
         parent = 0
         group_max_score = 0
         
@@ -98,17 +116,14 @@ def generate_offspring(current_population, population_size):
     
 ### Genetic Operators
 
-# make recombination of genes of the individs in population
-def crossover(population):
-    
-    # probability of pair crossover
-    crossover_rate = 0.6
+# make recombination of genes of the individs in population (point crossing over)
+def crossover(population, population_size, crossover_rate):
     
     # individs for crossover
     pairs = []
 
     # IDs of individs in population
-    individs_ids = list(range(0, 100))
+    individs_ids = list(range(0, population_size))
 
     k = 0
 
@@ -139,41 +154,57 @@ def crossover(population):
                 population[pairs[k]]['gene'][i] = population[pairs[k+1]]['gene'][i]
                 population[pairs[k+1]]['gene'][i] = temp_gene
         k+=2
+    
     return population
         
 
 # make mutations of genes of the individs in population
-def mutation(population):
-    
-    mutation_probability = 0.1
-    
-    mean, sigma = 0, 5 # mean and standard deviation
-    for i in range(len(population)):
-        for j in range(3):
-            if random.random() < mutation_probability:
-                rnd_value = np.random.normal(mean, sigma, 1)[0]
-                new_gene = population[i]['gene'][j] + rnd_value
-                
-                if new_gene > 100:
-                    new_gene = 100
+def mutation(population, individ_mutation_probability, gene_mutation_probability, mutation_step_size):
 
-                elif new_gene < 0:
-                    new_gene = 0
+    # mean and standard deviation (used for mutation step size determination)
+    mean, sigma = 0, mutation_step_size
+
+    for i in range(len(population)):
+        if random.random() < individ_mutation_probability:
+            for j in range(3):
+                if random.random() < gene_mutation_probability:
                     
-                population[i]['gene'][j]= new_gene
+                    rnd_value = np.random.normal(mean, sigma, 1)[0]
+                    new_gene = population[i]['gene'][j] + rnd_value
+                    
+                    if new_gene > 100:
+                        new_gene = 100
+
+                    elif new_gene < 0:
+                        new_gene = 0
+                        
+                    population[i]['gene'][j]= new_gene
     
     return population
 
 
 ### Plot
 
-# best population scores
+# population bests
 def show_best_scores(bests, best_of_the_bests):
-    plt.plot(bests)
+    
     plt.title("Generations Bests")
     plt.xlabel('Iteration')
-    plt.ylabel('Best Score of the Population')
+    plt.ylabel('Population Best Score')
     plt.axis([0, len(bests), 0, best_of_the_bests * 1.5])
+
+    plt.plot(bests)
+    plt.show()
+
+# population means
+def show_mean_scores(means):
+    
+    plt.title("Generations Means")
+    plt.xlabel('Iteration')
+    plt.ylabel('Population Mean Score')
+    #plt.axis([0, len(bests), 0, best_of_the_bests * 1.5])
+
+    plt.plot(means)
     plt.show()
 
         
@@ -182,36 +213,73 @@ def show_best_scores(bests, best_of_the_bests):
 #######################################################################################
 
 ### global parameters
+
+# population size
 population_size = 100
+
+# max iterations count
 time = 300
+
+# subpart of the population for the tournament selection
+group_size = 5
+
+# number of the individuals to be selected for breeding (selected parents go to the new population TOGETHER with their children)
+parents_count = 40
+
+# number of children each breeders couple should have
+child_num = 3
+
+# probability of the mutation of the certrain individ of the population (optiomal = 25)
+individ_mutation_probability = 0.28
+
+# probability of the mutation of the certrain gene of the certain individual (value = 1 / genes count)
+gene_mutation_probability = 1/3
+
+# mutation step size (deviation of normal distribution with mean = 0). Values = 1 - 50 (optiomal = 25)
+mutation_step_size = 25
+
+# probability of certain pair crossover
+crossover_rate = 0.5
+
+
+### utils
 progress = []
-
-# initial population
-population = initial_population(population_size)
-
-for i in range (time):
-    
-    # set fitness scores for each individual
-    population, winner = evaluate(population)
-
-    # winner score in population
-    progress.append(winner["fit"])
-    
-    # new population
-    population = generate_offspring(population, population_size)
-    
-    # crossover
-    population = crossover(population)
-
-    # mutate
-    population = mutation(population)
+means    = []
 
 
-#for i in range(time):
-#   print(progress[i])
+### run
+if (population_size * 0.4 * (1 + 1/2 * child_num) < population_size) or (group_size > population_size):
+    print ("Population is not stable\n")
+else:
+    # initial population
+    population = initial_population(population_size)
 
-print ("Best Fitness: " + str(winner["fit"])+'\n')
-print("Winner: ",str(winner["gene"][0]),str(winner["gene"][1]),str(winner["gene"][2]))
+    for i in range (time):
+        
+        # set fitness scores for each individual
+        population, winner, population_mean = evaluate(population)
+
+        # collect population best scores
+        progress.append(winner["fit"])
+
+        # collect population means
+        means.append(population_mean)
+        
+        # new population
+        population = generate_offspring(population, population_size, group_size, parents_count, child_num)
+        
+        # crossover over new population
+        population = crossover(population, population_size, crossover_rate)
+
+        # mutate over new population
+        population = mutation(population, individ_mutation_probability, gene_mutation_probability, mutation_step_size)
 
 
-show_best_scores(progress, winner["fit"])
+    #for i in range(time):
+    #   print(progress[i])
+
+    print ("Best Fitness: " + str(winner["fit"])+'\n')
+    print("Winner: ",str(winner["gene"][0]),str(winner["gene"][1]),str(winner["gene"][2]))
+
+    show_best_scores(progress, winner["fit"])
+    # show_mean_scores(means)
