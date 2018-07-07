@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 # calculate fitness score
 def calculate_fitness(x,y,z):
     return 2 * x * z * math.exp(-x) - 2 * math.pow(y, 3) + math.pow(y, 2) - 3 * math.pow(z, 3)
-    # return 2 * x + 3 * y - 1 / (math.pow(z, 3) + 1)
 
 # create initial population
 def initial_population(population_size):
@@ -186,12 +185,12 @@ def mutation(population, individ_mutation_probability, gene_mutation_probability
 ### Plot
 
 # population bests
-def show_best_scores(bests, best_of_the_bests):
+def show_best_scores(bests):
     
     plt.title("Generations Bests")
     plt.xlabel('Iteration')
     plt.ylabel('Population Best Score')
-    plt.axis([0, len(bests), 0, best_of_the_bests * 1.5])
+    plt.axis([0, len(bests), 0, max(bests) * 1.5])
 
     plt.plot(bests)
     plt.show()
@@ -202,7 +201,7 @@ def show_mean_scores(means):
     plt.title("Generations Means")
     plt.xlabel('Iteration')
     plt.ylabel('Population Mean Score')
-    #plt.axis([0, len(bests), 0, best_of_the_bests * 1.5])
+    plt.axis([0, len(means), 0, max(means) * 1.5])
 
     plt.plot(means)
     plt.show()
@@ -224,7 +223,7 @@ time = 300
 group_size = 5
 
 # number of the individuals to be selected for breeding (selected parents go to the new population TOGETHER with their children)
-parents_count = 40
+parents_count = 42
 
 # number of children each breeders couple should have
 child_num = 3
@@ -248,7 +247,7 @@ means    = []
 
 
 ### run
-if (population_size * 0.4 * (1 + 1/2 * child_num) < population_size) or (group_size > population_size):
+if (parents_count * (1 + 1/2 * child_num) < population_size) or (group_size > population_size):
     print ("Population is not stable\n")
 else:
     # initial population
@@ -281,5 +280,5 @@ else:
     print ("Best Fitness: " + str(winner["fit"])+'\n')
     print("Winner: ",str(winner["gene"][0]),str(winner["gene"][1]),str(winner["gene"][2]))
 
-    show_best_scores(progress, winner["fit"])
+    show_best_scores(progress)
     # show_mean_scores(means)
